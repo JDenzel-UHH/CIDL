@@ -1,0 +1,106 @@
+{
+  "track": "Patient-Level",
+  "description": "Each observation represents a single patient observed during a single year. The pair (id.patient, year) serves as a unique identifier.",
+  "variables": [
+    {
+      "name": "id.patient",
+      "type": "integer/string",
+      "description": "Unique patient identifier. Each row represents a patient in a given year."
+    },
+    {
+      "name": "id.practice",
+      "type": "integer/string",
+      "description": "Identifier of the practice to which the patient belongs."
+    },
+    {
+      "name": "Z",
+      "type": "binary {0, 1}",
+      "description": "Treatment indicator at the practice level: 1 = practice in treatment group, 0 = comparison group."
+    },
+    {
+      "name": "year",
+      "type": "integer {1, 2, 3, 4}",
+      "description": "Observation year of the patient."
+    },
+    {
+      "name": "post",
+      "type": "binary {0, 1}",
+      "description": "Indicator for whether the intervention has begun for the practice. 1 = years 3 or 4, 0 = years 1 or 2."
+    },
+    {
+      "name": "Y",
+      "type": "float",
+      "description": "Outcome variable: monthly Medicare expenditures for the patient in that year."
+    },
+    {
+      "name": "X1",
+      "type": "categorical/binary",
+      "description": "Practice-level covariates used to define subgroup SATT estimands."
+    },
+    {
+      "name": "X2",
+      "type": "categorical/binary",
+      "description": "Practice-level covariates used to define subgroup SATT estimands."
+    },
+    {
+      "name": "X3",
+      "type": "categorical/binary",
+      "description": "Practice-level covariates used to define subgroup SATT estimands."
+    },
+    {
+      "name": "X4",
+      "type": "categorical/binary",
+      "description": "Practice-level covariates used to define subgroup SATT estimands."
+    },
+    {
+      "name": "X5",
+      "type": "categorical/binary",
+      "description": "Practice-level covariates used to define subgroup SATT estimands."
+    },
+    {
+      "name": "X6",
+      "type": "categorical/binary/continuous",
+      "description": "Additional practice-level covariates."
+    },
+    {
+      "name": "X7",
+      "type": "categorical/binary/continuous",
+      "description": "Additional practice-level covariates."
+    },
+    {
+      "name": "X8",
+      "type": "categorical/binary/continuous",
+      "description": "Additional practice-level covariates."
+    },
+    {
+      "name": "X9",
+      "type": "categorical/binary/continuous",
+      "description": "Additional practice-level covariates."
+    },
+    {
+      "name": "V1",
+      "type": "continuous/categorical/binary",
+      "description": "Patient-level covariates."
+    },
+    {
+      "name": "V2",
+      "type": "continuous/categorical/binary",
+      "description": "Patient-level covariates."
+    },
+    {
+      "name": "V3",
+      "type": "continuous/categorical/binary",
+      "description": "Patient-level covariates."
+    },
+    {
+      "name": "V4",
+      "type": "continuous/categorical/binary",
+      "description": "Patient-level covariates."
+    },
+    {
+      "name": "V5",
+      "type": "continuous/categorical/binary",
+      "description": "Patient-level covariates."
+    }
+  ]
+}
