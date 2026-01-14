@@ -2,9 +2,10 @@
   <img width="512" height="512" alt="CIDL_left_bottom_extracted" src="https://github.com/user-attachments/assets/5210f427-15b5-433c-8de3-df331794ca56" />
 </div>
 
+# Causal Inference Data Library (CIDL)
 
 This repository contains a modular Python backend for structured, reproducible access to the
-**ACIC Data Challenge 2022** datasets, including corresponding ground-truth effects,
+**ACIC Data Challenge 2022** datasets, including simulations and corresponding ground-truth SATT values,
 as well as metadata on the data-generating processes (DGPs) and the data itself.
 
 The project is developed as part of a Master’s Thesis and currently represents an **intermediate
@@ -15,16 +16,15 @@ reproducibility rather than on a finalized public API.
 
 ## Motivation
 
-The ACIC 2022 datasets are a widely used benchmark for evaluating causal inference methods.
-While the raw data are publicly available, practical usage in Python is cumbersome due to
+The ACIC 2022 datasets are a benchmark for evaluating causal inference methods. In practice, working with
+the raw files in Python is cumbersome due to
 
 - distribution across multiple ZIP archives,
 - heterogeneous file structures,
-- lack of direct links between simulations, ground truth, and DGP metadata,
-- and repetitive, error-prone data preparation steps.
+- missing direct links between simulations, ground truth, and DGP metadata,
+- and repetitive, error-prone preparation steps.
 
-This module addresses this gap by providing a **clean abstraction layer** between the raw data
-and downstream causal analysis, enabling reproducible and standardized experimentation.
+This module reduces that overhead by providing a consistent storage layout and a small, explicit loading layer.
 
 ---
 
@@ -32,16 +32,16 @@ and downstream causal analysis, enabling reproducible and standardized experimen
 
 At its current stage, this repository provides:
 
-- A **robust S3 backend** for accessing ACIC data hosted on institutional infrastructure
-- **Index-based loading** of simulation datasets
-- **Index-consistent loading and validation** of ground-truth estimands
-- Centralized access to **DGP metadata** (confounding strength, heterogeneity, difficulty tiers)
-- A unified, column-consistent **Parquet-based data format**
+- a **robust S3 backend** for accessing ACIC data hosted on institutional infrastructure,
+- **index-based loading** of simulation datasets,
+- **index-consistent loading and validation** of ground-truth SATT values,
+- centralized access to **DGP metadata** (confounding, heterogeneity, difficulty tiers),
+- and a unified, column-consistent **Parquet-based** data format.
 
 The repository **does not yet** provide:
 - evaluation methods,
 - distribution via PyPI,
-- or a finalized public API.
+- or a stabilized public API.
 
 ---
 
@@ -54,16 +54,16 @@ Each simulation contains approximately:
 
 - 40,000 patients
 - 500 medical practices
-- Up to 4 years of follow-up per patient and practice
+- up to 4 years of follow-up per patient and practice
 
-The data mimic large-scale evaluations of U.S. healthcare programs with
+The data emulate health policy evaluations with
 
 - voluntary program participation (non-randomized treatment),
-- strong observed confounding,
+- observed confounding,
 - hierarchical and longitudinal structure,
-- and substantial treatment-effect heterogeneity.
+- and treatment-effect heterogeneity.
 
-Ground-truth SATT values are available and included in the module (overall, practice-level, and for all covariate-defined subgroups).
+Ground-truth **SATT values** are available and included in the module (overall, practice-level, and covariate-defined subgroup values).
 
 For full background on the data-generating design, see the official  
 [ACIC 2022 documentation](https://acic2022.mathematica.org/data).
@@ -75,7 +75,7 @@ For full background on the data-generating design, see the official
 All processed data are stored on the University of Hamburg’s  
 *object and long-term storage (LZS)*, an S3-compatible infrastructure.
 
-The storage layout separates simulations, ground truth, and metadata:
+The storage separates simulations, ground truth, and metadata:
 
 - **Simulations:** merged, column-consistent Parquet files (one file per simulation)
 - **Ground truth:** Parquet files indexed identically to simulations
@@ -87,18 +87,18 @@ To access the data, you must set two keys as environment variables on your local
 
 ## Development Status
 
-This repository is currently under **development**. Significant changes should be expected at this stage.
+This repository is under **active development**. Breaking changes should be expected.
 
-The current focus is on:
+Current focus:
 - correctness of data handling,
-- robustness of index-based access,
-- and transparent linkage between simulations, ground truth, and metadata.
+- robust index-based access,
+- transparent linkage between simulations, ground truth, and metadata.
 
-Planned next steps include:
-- stabilization of the public API,
+Planned next steps:
+- API stabilization,
 - improved documentation and examples,
 - optional PyPI packaging,
-- and extensions for evaluation utilities.
+- extensions for evaluation utilities.
 
 ---
 
@@ -138,6 +138,3 @@ University of Hamburg
 julian.denzel@studium.uni-hamburg.de  
 
 martin.spindler@uni-hamburg.de
-
-
-First issued: **April 2026**
