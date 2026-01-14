@@ -56,7 +56,7 @@ import pandas as pd
 #   (named: merged_####.parquet) stored in MANUAL_MERGED_PATH, and their dataset
 #   IDs listed in VALIDATION_ID.
 # =============================================================================
-BASE_FOLDER = r"C:\MT_Ausgangsdaten_für_Merge"
+BASE_FOLDER = r"C:\..."
 
 # Input ZIPs (each contains patient/, patient_year/, practice/, practice_year/ + PDF)
 TRACK1A_ZIP = os.path.join(BASE_FOLDER, "track1a_20220404.zip")
@@ -64,7 +64,7 @@ TRACK1B_ZIP = os.path.join(BASE_FOLDER, "track1b_20220404.zip")
 TRACK1C_ZIP = os.path.join(BASE_FOLDER, "track1c_20220404.zip")
 
 # Output folder
-OUT_FOLDER = r"D:\MThesis_Daten_parquet\0001-3400"
+OUT_FOLDER = r"D:\..."
 
 # Dask read parameters
 DASK_BLOCKSIZE = "32MB"
@@ -76,7 +76,7 @@ RUN_FIX_DTYPES_INPLACE = True
 RUN_VALIDATION = False  # set True only if you provide MANUAL_MERGED_PATH + VALIDATION_ID
 
 # Validation inputs (optional)
-MANUAL_MERGED_PATH = r"C:\...\merged_parquet"
+MANUAL_MERGED_PATH = r"C:\..."
 VALIDATION_IDS = [
     ["0055", "1111", "1197"],  # track1a example IDs
     ["1212", "2100", "2290"],  # track1b example IDs
