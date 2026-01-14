@@ -1,12 +1,13 @@
 """
-acic_preprocessing_pipeline_simple.py
+acic22_dataprocessing.py
 
-Unified preprocessing pipeline for ACIC Track1 data:
+Preprocessing pipeline for ACIC Track1 data:
+
 1) Merge CSVs inside ZIPs -> one Parquet per simulation (sim_####.parquet)
-2) Fix dtypes across all Parquets
-3) Optional validation: compare a few manually merged reference Parquets against fixed outputs
+2) Enforce consistent dtypes across all Parquets (in-place overwrite)
+3) Optional validation: compare a few manually merged reference Parquets against outputs
 
-MERGE LOGIC:
+MERGE LOGIC (per dataset ####):
 - Read:
     patient/acic_patient_####.csv
     patient_year/acic_patient_year_####.csv
@@ -20,15 +21,19 @@ MERGE LOGIC:
 - Compute (Dask -> Pandas) and write:
     sim_####.parquet (pyarrow + snappy, index=False)
 
-DTYPE FIX LOGIC:
+Reference: see official documentation "acic22_File merging instructions".
+
+DTYPE ENFORCEMENT LOGIC:
 - For each Parquet:
-  - Cast columns based on your dtype map
-  - Special case: if target dtype is integer and current dtype is float, fillna(0) then astype(int64)
+  - Cast columns according to DTYPES_TARGET
+  - Special case: if target dtype is integer and current dtype is float,
+    do fillna(0) then astype(int64) (matches original behavior)
 
 NOTES:
-- Each track must be sinngle ZIP (track1a, track1b, track1c).
-- Each ZIP must include the seperate folders "patient", "patient_year", "practice", "practice_year"
-- The ZIP can contain additional files; they are ignored.
+- Download the raw data from the ACIC22 homepage.
+- Each track is provided as a single ZIP (track1a, track1b, track1c).
+- Each ZIP must contain the folders: "patient", "patient_year", "practice", "practice_year".
+- The ZIP may contain additional files (e.g., PDFs); those are ignored.
 """
 
 from __future__ import annotations
@@ -45,30 +50,34 @@ import pandas as pd
 
 # =============================================================================
 # CONFIGURATIONS
+# - BASE_FOLDER: location of raw Track1 ZIP archives
+# - OUT_FOLDER: target location for merged simulation Parquets (sim_####.parquet)
+# - Validation requires manually merged reference Parquets 
+#   (named: merged_####.parquet) stored in MANUAL_MERGED_PATH, and their dataset
+#   IDs listed in VALIDATION_ID.
 # =============================================================================
 BASE_FOLDER = r"C:\MT_Ausgangsdaten_für_Merge"
 
-# Input ZIPs (each ZIP contains: patient/, patient_year/, practice/, practice_year/ + PDF)
+# Input ZIPs (each contains patient/, patient_year/, practice/, practice_year/ + PDF)
 TRACK1A_ZIP = os.path.join(BASE_FOLDER, "track1a_20220404.zip")
 TRACK1B_ZIP = os.path.join(BASE_FOLDER, "track1b_20220404.zip")
 TRACK1C_ZIP = os.path.join(BASE_FOLDER, "track1c_20220404.zip")
 
-
-# Single unified output folder (final state will be dtype-fixed Parquets)
+# Output folder
 OUT_FOLDER = r"D:\MThesis_Daten_parquet\0001-3400"
 
-# Dask reading parameters 
+# Dask read parameters
 DASK_BLOCKSIZE = "32MB"
 BLOCK_SIZE = 10
 
 # Which steps to run
 RUN_MERGE = True
 RUN_FIX_DTYPES_INPLACE = True
-RUN_VALIDATION = False # TRUE if you have manual reference parquets specified by MANUAL_MERGED_PATH and VALIDATION_IDS
+RUN_VALIDATION = False  # set True only if you provide MANUAL_MERGED_PATH + VALIDATION_ID
 
 # Validation inputs (optional)
-MANUAL_MERGED_PATH = r"C:\...\merged_parquet"  # contains merged_####.parquet
-VALIDATION_CASES = [
+MANUAL_MERGED_PATH = r"C:\...\merged_parquet"
+VALIDATION_IDS = [
     ["0055", "1111", "1197"],  # track1a example IDs
     ["1212", "2100", "2290"],  # track1b example IDs
     ["2678", "2999", "3313"],  # track1c example IDs
@@ -92,11 +101,13 @@ DTYPES_TARGET: Dict[str, str] = {
 # HELPERS
 # =============================================================================
 def _process_in_blocks(items: List[str], block_size: int):
+    """Yield (block_number, list_of_ids) to limit memory usage."""
     for i in range(0, len(items), block_size):
         yield (i // block_size + 1), items[i:i + block_size]
 
 
 def _read_dd_csv(local_csv_path: str) -> dd.DataFrame:
+    """Read a CSV with Dask using the same parameters as in the original scripts."""
     return dd.read_csv(
         local_csv_path,
         sep=",",
@@ -108,9 +119,7 @@ def _read_dd_csv(local_csv_path: str) -> dd.DataFrame:
 
 
 def _extract_member(zf: zipfile.ZipFile, member: str, temp_dir: str) -> str:
-    """
-    Extract exactly one ZIP member into temp_dir and return the extracted file path.
-    """
+    """Extract a ZIP member into a temporary directory and return the local file path."""
     out_path = os.path.join(temp_dir, os.path.basename(member))
     with zf.open(member) as f_in, open(out_path, "wb") as f_out:
         shutil.copyfileobj(f_in, f_out)
@@ -119,10 +128,8 @@ def _extract_member(zf: zipfile.ZipFile, member: str, temp_dir: str) -> str:
 
 def _merge_one_dataset(zf: zipfile.ZipFile, zip_members: set[str], dataset_id: str) -> Optional[pd.DataFrame]:
     """
-    Merge one dataset_id from an already-open ZipFile.
-    Returns None if required files are missing.
-
-    Merge logic matches your scripts.
+    Merge one dataset #### from an already-open ZipFile.
+    Returns None if any required file is missing.
     """
     files_needed = {
         "patient": f"patient/acic_patient_{dataset_id}.csv",
@@ -147,7 +154,7 @@ def _merge_one_dataset(zf: zipfile.ZipFile, zip_members: set[str], dataset_id: s
         df_practice = _read_dd_csv(p_practice)
         df_practice_year = _read_dd_csv(p_practice_year)
 
-        # Drop Y from practice_year if present (matches your scripts)
+        # Drop "Y" from practice_year if present (matches original scripts)
         if "Y" in df_practice_year.columns:
             df_practice_year = df_practice_year.drop(columns=["Y"])
 
@@ -162,6 +169,7 @@ def _merge_one_dataset(zf: zipfile.ZipFile, zip_members: set[str], dataset_id: s
 
 
 def _write_parquet(df: pd.DataFrame, out_folder: str, dataset_id: str) -> str:
+    """Write one simulation dataset as Parquet: sim_####.parquet."""
     os.makedirs(out_folder, exist_ok=True)
     out_path = os.path.join(out_folder, f"sim_{dataset_id}.parquet")
     df.to_parquet(out_path, engine="pyarrow", compression="snappy", index=False)
@@ -172,8 +180,8 @@ def _write_parquet(df: pd.DataFrame, out_folder: str, dataset_id: str) -> str:
 # STEP 1: MERGE (ZIP -> Parquet)
 # =============================================================================
 def merge_zip_range(zip_path: str, out_folder: str, start_id: int, end_id: int) -> None:
+    """Merge a contiguous dataset ID range from one Track ZIP."""
     os.makedirs(out_folder, exist_ok=True)
-
     dataset_ids = [f"{i:04d}" for i in range(start_id, end_id + 1)]
 
     print(f"\nMerging ZIP: {os.path.basename(zip_path)}")
@@ -194,14 +202,15 @@ def merge_zip_range(zip_path: str, out_folder: str, start_id: int, end_id: int) 
                 out_path = _write_parquet(df, out_folder, dataset_id)
                 print(f"Wrote {os.path.basename(out_path)} ({time.time() - t0:.1f}s)")
 
+
 # =============================================================================
-# STEP 2: FIX DTYPES IN-PLACE (overwrite files safely)
+# STEP 2: FIX DTYPES IN-PLACE (overwrite files)
 # =============================================================================
 def fix_dtypes_inplace(folder: str, start_id: int, end_id: int) -> None:
     """
-    Reads sim_####.parquet, enforces DTYPES_TARGET, and overwrites the same file.
+    Read sim_####.parquet, enforce DTYPES_TARGET, and overwrite the same file.
 
-    "Safe overwrite":
+    Safe overwrite:
     - write to a temporary file in the same directory
     - then os.replace(temp, final) (atomic replace on Windows)
     """
@@ -223,15 +232,13 @@ def fix_dtypes_inplace(folder: str, start_id: int, end_id: int) -> None:
         for col, dtype in DTYPES_TARGET.items():
             if col not in df.columns:
                 continue
-
-            # Preserve your original float->int logic
             if dtype.startswith("int") and pd.api.types.is_float_dtype(df[col]):
                 df[col] = df[col].fillna(0).astype("int64")
             else:
                 df[col] = df[col].astype(dtype)
 
         tmp_path = final_path + ".__tmp__"
-        df.to_parquet(tmp_path, engine="pyarrow", compression="snappy",index=False)
+        df.to_parquet(tmp_path, engine="pyarrow", compression="snappy", index=False)
         os.replace(tmp_path, final_path)
 
         if i % 50 == 0 or i == total:
@@ -239,12 +246,10 @@ def fix_dtypes_inplace(folder: str, start_id: int, end_id: int) -> None:
 
 
 # =============================================================================
-# STEP 3: VALIDATION (optional)
+# STEP 3: VALIDATION (requires manual reference Parquets)
 # =============================================================================
 def validate_equals(manual_merged_path: str, sim_folder: str, ids: List[str]) -> None:
-    """
-    Compare manual merged_{id}.parquet to sim_{id}.parquet using df.equals().
-    """
+    """Compare merged_####.parquet to sim_####.parquet using df.equals()."""
     print("\nValidation (df.equals):")
     manual_merged_path = os.path.abspath(manual_merged_path)
     sim_folder = os.path.abspath(sim_folder)
@@ -277,20 +282,19 @@ def validate_equals(manual_merged_path: str, sim_folder: str, ids: List[str]) ->
 # RUN
 # =============================================================================
 def main() -> None:
-
-    # 1) Merge all tracks into the single unified output folder
+    # 1) Merge all tracks into OUT_FOLDER
     if RUN_MERGE:
         merge_zip_range(TRACK1A_ZIP, OUT_FOLDER, 1, 1200)
         merge_zip_range(TRACK1B_ZIP, OUT_FOLDER, 1201, 2400)
         merge_zip_range(TRACK1C_ZIP, OUT_FOLDER, 2401, 3400)
 
-    # 2) Fix dtypes in-place (final state remains only one folder)
+    # 2) Enforce datatypes (in-place)
     if RUN_FIX_DTYPES_INPLACE:
         fix_dtypes_inplace(OUT_FOLDER, 1, 3400)
 
-    # 3) Validation (optional): compare manual references to the final Parquets in OUT_FOLDER
+    # 3) Validation (optional): compare manual references to final Parquets in OUT_FOLDER
     if RUN_VALIDATION:
-        for ids in VALIDATION_CASES:
+        for ids in VALIDATION_IDS:
             validate_equals(MANUAL_MERGED_PATH, OUT_FOLDER, ids)
 
 
