@@ -1,78 +1,104 @@
-<img width="1024" height="1024" alt="CIDL_showstopper_futuristic_slate" src="https://github.com/user-attachments/assets/ed0cbf89-1976-42d4-a055-21eade1d3c01" />
+<div align="center">
+  <img width="512" height="512" alt="CIDL_left_bottom_extracted" src="https://github.com/user-attachments/assets/5210f427-15b5-433c-8de3-df331794ca56" />
+</div>
 
-<img width="512" height="512" alt="CIDL_left_bottom_extracted" src="https://github.com/user-attachments/assets/5210f427-15b5-433c-8de3-df331794ca56" />
 
+This repository contains a modular Python backend for structured, reproducible access to the
+**ACIC Data Challenge 2022** datasets, including corresponding ground-truth effects,
+as well as metadata on the data-generating processes (DGPs) and the data itself.
 
-# Causal Inference Data Library
-
-This module provides an easy and efficient way to access and explore the **ACIC Data Challenge 2022** datasets. The ACIC 2022 competition serves as a benchmark for evaluating novel methods in causal inference.  
-
-The module was developed as part of a Master’s Thesis project at the University of Hamburg (UHH) and aims to support researchers working on causal inference and predictive modeling.
-
-> *Future versions may include additional datasets and functionality for related simulation studies.*
-
----
-
-## Purpose and Audience
-
-This module is designed for Researchers developing new causal estimation methods and seeking ready-to-use benchmark data for validation and experimentation  
+The project is developed as part of a Master’s Thesis and currently represents an **intermediate
+development stage**. The focus at this stage lies on data infrastructure, correctness, and
+reproducibility rather than on a finalized public API.
 
 ---
 
-## About the Data
+## Motivation
 
-The ACIC 2022 dataset consists of 3,400 independent simulations of empirical healthcare data.  
-Each simulation includes:
+The ACIC 2022 datasets are a widely used benchmark for evaluating causal inference methods.
+While the raw data are publicly available, practical usage in Python is cumbersome due to
 
-- ~40,000 individuals  
-- 500 practices  
-- Up to 4 years of follow-up per individual and practice  
+- distribution across multiple ZIP archives,
+- heterogeneous file structures,
+- lack of direct links between simulations, ground truth, and DGP metadata,
+- and repetitive, error-prone data preparation steps.
 
-Each dataset is based on a specific data generating process (DGP). There are 17 different DGPs in total, which vary in difficulty due to differences within followoing areas: 
-
-![alt text](DGPs.png)
-
-Each DGP is respinsible for 200 diffenrent datasets.
-
-The ground truth data for each simulation is also available within this module and is as easyly accessible as tge simulations.
-
-For detailed information on the data, please refer to the official [ACIC 2022 documentation](https://acic2022.mathematica.org/data).
-
-### Data Formats
-
-The data is presented in 
-
-2. **Merged data** (in `.parquet` format), which combines all sources into a single dataset ready for analysis. Each simulation can be loaded seperately.
-
-### Data Hosting
-
-The data is hosted on the so called *Objekt- und Langzeitspeicher (LZS)* of the University of Hamburg —  
-a high-performance S3-compatible data storage infrastructure.  
-The first three example simulations are shipped directly with the package for easy offline exploration.
-
-### Methodological Notes
-
-Splitting, sampling, and cross-fitting are method-specific steps that depend on the causal inference approach used.
-Therefore, no predefined training/test partitions are included.
-Users should implement their own data-splitting logic consistent with their chosen method.
-
-
-
-
-
-
-See the example notebook examples/load_and_split.ipynb for guidance !!!!!!!!!!! ANPASSEN und ERSTELLEN
-
-
-
+This module addresses this gap by providing a **clean abstraction layer** between the raw data
+and downstream causal analysis, enabling reproducible and standardized experimentation.
 
 ---
 
-## How to Access the Data
+## Scope of This Repository
 
- --> infos abaout how to use functionalites of the module (TBD)
+At its current stage, this repository provides:
 
+- A **robust S3 backend** for accessing ACIC data hosted on institutional infrastructure
+- **Index-based loading** of simulation datasets
+- **Index-consistent loading and validation** of ground-truth estimands
+- Centralized access to **DGP metadata** (confounding strength, heterogeneity, difficulty tiers)
+- A unified, column-consistent **Parquet-based data format**
 
+The repository **does not yet** provide:
+- evaluation methods,
+- distribution via PyPI,
+- or a finalized public API.
+
+---
+
+## Data Overview (ACIC 2022)
+
+The ACIC 2022 dataset consists of **3,400 independent simulations**, generated from
+**17 data-generating processes (DGPs)** with **200 simulations per DGP**.
+
+Each simulation contains approximately:
+
+- 40,000 patients
+- 500 medical practices
+- Up to 4 years of follow-up per patient and practice
+
+The data mimic large-scale evaluations of U.S. healthcare programs with
+
+- voluntary program participation (non-randomized treatment),
+- strong observed confounding,
+- hierarchical and longitudinal structure,
+- and substantial treatment-effect heterogeneity.
+
+Ground-truth SATT values are available and included in the module (overall, practice-level, and for all covariate-defined subgroups).
+
+For full background on the data-generating design, see the official  
+[ACIC 2022 documentation](https://acic2022.mathematica.org/data).
+
+---
+
+## Data Storage
+
+All processed data are stored on the University of Hamburg’s  
+*object and long-term storage (LZS)*, an S3-compatible infrastructure.
+
+The storage layout separates simulations, ground truth, and metadata:
+
+- **Simulations:** merged, column-consistent Parquet files (one file per simulation)
+- **Ground truth:** Parquet files indexed identically to simulations
+- **Metadata:** JSON files describing simulation indices, DGP properties, and variable definitions
+
+To access the data, you must set two keys as environment variables on your local machine.
+
+---
+
+## Development Status
+
+This repository is currently under **development**. Significant changes should be expected at this stage.
+
+The current focus is on:
+- correctness of data handling,
+- robustness of index-based access,
+- and transparent linkage between simulations, ground truth, and metadata.
+
+Planned next steps include:
+- stabilization of the public API,
+- improved documentation and examples,
+- optional PyPI packaging,
+- and extensions for evaluation utilities.
 
 ---
 
@@ -80,26 +106,38 @@ See the example notebook examples/load_and_split.ipynb for guidance !!!!!!!!!!! 
 
 ### Academic Context
 
-This package was developed as part of a **Master’s Thesis at the University of Hamburg (UHH)**.  
-Its goal is to simplify access to standardized simulation datasets for causal inference research,  
-facilitating reproducible testing and comparison of new methods.
+This project is developed as part of a **Master’s Thesis at the University of Hamburg (UHH)**.
+Its primary goal is to create a reusable and reliable data-access layer for causal inference
+research using the ACIC 2022 datasets.
+
+### Intended Use
+
+At present, this repository is intended for:
+- thesis supervision and review,
+- internal experimentation,
+- and documentation of data preprocessing.
 
 ### Contributing
 
-Contributions and suggestions are welcome!  
-Please open an issue or submit a pull request on [GitHub](https://github.com/yourusername/package).
+Suggestions, issues, and conceptual feedback are welcome.
 
-### License
+---
 
-This project is licensed under the **MIT License**.
+## License
 
-### Author
+MIT License
+
+---
+
+## Author
 
 **Julian Denzel**  
-Master’s Thesis Project, University of Hamburg  
+Master’s Thesis Project  
+University of Hamburg  
 
 julian.denzel@studium.uni-hamburg.de  
-martin.spindler@uni-hamburg.de  
+
+martin.spindler@uni-hamburg.de
+
 
 First issued: **April 2026**
-
