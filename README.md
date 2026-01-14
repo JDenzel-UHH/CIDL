@@ -1,5 +1,8 @@
 <img width="1024" height="1024" alt="CIDL_showstopper_futuristic_slate" src="https://github.com/user-attachments/assets/ed0cbf89-1976-42d4-a055-21eade1d3c01" />
 
+<img width="512" height="512" alt="CIDL_left_bottom_extracted" src="https://github.com/user-attachments/assets/5210f427-15b5-433c-8de3-df331794ca56" />
+
+
 # Causal Inference Data Library
 
 This module provides an easy and efficient way to access and explore the **ACIC Data Challenge 2022** datasets. The ACIC 2022 competition serves as a benchmark for evaluating novel methods in causal inference.  
