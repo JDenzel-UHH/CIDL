@@ -122,8 +122,7 @@ You may deviate from the workflow above if you prefer. However, to enable the (p
 - one `.csv` file,
 - with the columns: `dataset.num`, `variable`, `level`, `year`, `id.practice`, `satt`, `lower90`, `upper90`.
 
-For an example results table, see:  
-[Example Result Table](https://github.com/JDenzel-UHH/CIDL/blob/main/documentation/example_results_table.md)
+For an example results table, see: [Example Result Table](https://github.com/JDenzel-UHH/CIDL/blob/main/documentation/example_results_table.md)
 
 #### 4) Evaluate
 
